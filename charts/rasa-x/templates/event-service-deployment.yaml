@@ -28,6 +28,7 @@ spec:
       tolerations:
 {{ toYaml .Values.eventService.tolerations | indent 6 }}
       {{- end }}
+      {{- include "initContainer.dbMigration" . |  nindent 6 }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.eventService.name }}:{{ .Values.eventService.tag | default (include "rasa-x.version" .) }}"
@@ -36,8 +37,11 @@ spec:
         command:
           {{- toYaml .Values.eventService.command | nindent 10 }}
         {{- end }}
-        {{- if .Values.eventService.args }}
         args:
+          - python
+          - -m
+          - rasax.community.services.event_service
+        {{- if .Values.eventService.args }}
           {{- toYaml .Values.eventService.args | nindent 10 }}
         {{- end }}
         ports:
@@ -52,10 +56,6 @@ spec:
           httpGet:
             path: "/health"
             port: "http"
-        args:
-          - python
-          - -m
-          - rasax.community.services.event_service
         env:
         - name: "SELF_PORT"
           value: {{ default 5673 .Values.eventService.port | quote }}
